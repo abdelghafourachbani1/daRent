@@ -1,5 +1,6 @@
 <?php
 
+namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\AuthService;
@@ -58,4 +59,5 @@ class AuthController extends Controller {
     public function me(Request $request) {
         return response()->json($request->user());
     }
+    
 }
