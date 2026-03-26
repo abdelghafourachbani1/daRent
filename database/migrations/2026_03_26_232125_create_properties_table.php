@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('title');
+            $table->text('description');
+            $table->decimal('price', 10, 2);
+            $table->string('city');
+            $table->string('address');
+            $table->string('type'); 
+            $table->boolean('availability')->default(true);
             $table->timestamps();
         });
     }
