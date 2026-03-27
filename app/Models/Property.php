@@ -10,4 +10,15 @@ class Property extends Model
         return $this->belongsTo(User::class);
     }
 
+    protected $fillable = [
+        'user_id',
+        'title',
+        'description',
+        'price',
+        'city',
+        'address',
+        'type',
+        'availability'
+    ];
+
 }
