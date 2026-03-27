@@ -65,4 +65,10 @@ class PropertyController extends Controller
         ]);
     }
 
+    public function myProperties(Request $request) {
+        return response()->json(
+            $request->user()->properties
+        );
+    }
+
 }
