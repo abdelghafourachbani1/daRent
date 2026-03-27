@@ -50,4 +50,19 @@ class PropertyController extends Controller
         return response()->json($property);
     }
 
+    public function destroy(Request $request,$id) {
+        $property = Property::findOrFail($id);
+
+        if ($property->user_id !== $request->user()->id) {
+            return response()->json([
+                'message' => 'Forbidden'
+            ],403);
+        } 
+
+        $property->delete();
+        return response()->json([
+            'message' => 'Deleted Successfuly'
+        ]);
+    }
+
 }
