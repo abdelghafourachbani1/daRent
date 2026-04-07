@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+
+    public function register(Request $request): JsonResponse {
+        $request->validate([
+            'nom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'telephone' => 'nullable|string|max:20',
+            'role' => 'required|in:tenant,owner',
+        ]);
+
+        $user = User::create([
+            'nom' => $request->nom,
+            'email' => $request->email,
+            'password' => $request->password,
+            'telephone' => $request->telephone,
+            'role' => $request->role,
+        ]);
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'compte cree avec succes',
+            'user' => [
+                'id' => $user->id,
+                'nom' => $user->nom,
+                'email' => $user->email,
+                'role' => $user->role,
+                'telephone' => $user->telephone,
+                'avatar' => $user->avatar,
+            ],
+            'token' => $token,
+            'token_type' => 'Bearer',
+        ],201);
+    }
+
+    public function login(Request $request): JsonResponse {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'email ou mot de passe incorrect',
+            ],401);
+        }
+        $user->tokens()->delete();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+       return response()->json([
+            'message'    => 'Connexion réussie',
+            'user'       => [
+                'id'        => $user->id,
+                'nom'       => $user->nom,
+                'email'     => $user->email,
+                'role'      => $user->role,
+                'telephone' => $user->telephone,
+                'avatar'    => $user->avatar,
+            ],
+            'token'      => $token,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
+    public function me(Request $request): JsonResponse {
+        $user = $request->user();
+
+        return response()->json([
+            'user' => [
+                'id'        => $user->id,
+                'nom'       => $user->nom,
+                'email'     => $user->email,
+                'role'      => $user->role,
+                'telephone' => $user->telephone,
+                'avatar'    => $user->avatar,
+                'created_at'=> $user->created_at,
+            ],
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse {
+        $user = $request->user();
+
+        $request->validate([
+            'nom' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|unique:users,email,'.$user->id,
+            'telephone' => 'sometimes|nullable|string|max:20',
+            'password' => 'sometimes|string|min:8|confirmed',
+            'avatar' => 'sometimes|nullable|image|max:2048',
+        ]);
+
+        $data = $request->only(['nom','email','telephone']);
+
+        if ($request->filled('password')) {
+            $data['password'] = $request->password;
+        }
+
+        if($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars','public');
+            $data['avatar'] = $path;
+        }
+
+        $updated = $user->updateProfile($data);
+
+                return response()->json([
+            'message' => 'profile updated successfuly',
+            'user'    => [
+                'id'        => $user->fresh()->id, 
+                'nom'       => $user->fresh()->nom,
+                'email'     => $user->fresh()->email,
+                'role'      => $user->fresh()->role,
+                'telephone' => $user->fresh()->telephone,
+                'avatar'    => $user->fresh()->avatar,
+            ],
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse{
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'deconnexion reussite',
+        ]);
+    }
+}

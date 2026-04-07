@@ -1,30 +1,17 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\PropertyController;
-
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
 
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register',[AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
-    });
 });
 
-Route::get('/properties', [PropertyController::class, 'index']);
-Route::get('/properties/{id}', [PropertyController::class, 'show']);
-
 Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/properties', [PropertyController::class, 'store']);
-    Route::put('/properties/{id}', [PropertyController::class, 'update']);
-    Route::delete('/properties/{id}', [PropertyController::class, 'destroy']);
-    Route::get('/my-properties', [PropertyController::class, 'myProperties']);
+ 
+    Route::get('/auth/me', [AuthController::class, 'me']);
+    Route::put('/auth/me', [AuthController::class, 'updateProfile']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
 });
