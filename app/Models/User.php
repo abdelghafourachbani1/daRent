@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -18,10 +19,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'nom',
         'email',
         'password',
-        'role'
+        'telephone',
+        'role',
+        'avatar',
     ];
 
     /**
@@ -47,8 +50,31 @@ class User extends Authenticatable
         ];
     }
 
-    public function properties() {
-        return $this->hasMany(Property::class);
+    public function isOwner(): bool {
+        return $this->role === 'owner';
     }
 
+    public function isTenant(): bool {
+        return $this->role === 'tenant';
+    }
+
+    public function updateProfile(array $data): bool {
+        return $this->update($data);
+    }
+
+    public function properties() {
+        return $this->hasMany(Property::class, 'user_id');
+    }
+
+    public function favorites() {
+        return $this->hasMany(Favorite::class, 'user_id');
+    }
+
+    public function messages() {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function reservations() {
+        return $this->hasMany(reservation::class, 'tenant_id');
+    }
 }
