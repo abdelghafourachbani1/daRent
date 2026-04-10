@@ -37,4 +37,25 @@ class MessageSent implements ShouldBroadcast
         ];
     }
 
+    public function broadcastAs(): string {
+        return 'MessageSent';
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'message' => [
+                'id'              => $this->message->id,
+                'conversation_id' => $this->message->conversation_id,
+                'contenu'         => $this->message->contenu,
+                'date_envoie'     => $this->message->date_envoie,
+                'est_lu'          => $this->message->est_lu,
+                'sender'          => [
+                    'id'     => $this->message->sender->id,
+                    'nom'    => $this->message->sender->nom,
+                    'avatar' => $this->message->sender->avatar,
+                ],
+            ],
+        ];
+    }
 }
