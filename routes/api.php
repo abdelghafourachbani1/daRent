@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\MessagingController;
 
 
 Route::prefix('auth')->group(function () {
@@ -40,5 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:tenant')->group(function () {
         Route::post('/properties/{propertyId}/reviews', [ReviewController::class, 'store']);
     });
-     Route::get('/properties/{propertyId}/reviews', [ReviewController::class, 'index']);
+    Route::get('/properties/{propertyId}/reviews', [ReviewController::class, 'index']);
+
+    Route::post('/conversations', [MessagingController::class, 'createConversation']);
+    Route::get('/conversations', [MessagingController::class, 'getConversations']); 
+    Route::get('/conversations/{conversation}', [MessagingController::class, 'getConversation']); 
+    Route::post('/messages', [MessagingController::class, 'sendMessage']); 
+    Route::get('/messages/{conversationId}', [MessagingController::class, 'getMessages']);
+    Route::delete('/messages/{message}', [MessagingController::class, 'deleteMessage']);
 });
