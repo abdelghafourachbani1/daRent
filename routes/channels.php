@@ -15,3 +15,7 @@ Broadcast::channel('conversation.{conversationId}', function ($user, $conversati
     }
     return $conversation->isParticipant($user->id);
 });
+
+Broadcast::channel('reservations.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

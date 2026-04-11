@@ -6,7 +6,7 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MessagingController;
-
+use App\Http\Controllers\Api\ReservationController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register',[AuthController::class, 'register']);
@@ -49,4 +49,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/messages', [MessagingController::class, 'sendMessage']); 
     Route::get('/messages/{conversationId}', [MessagingController::class, 'getMessages']);
     Route::delete('/messages/{message}', [MessagingController::class, 'deleteMessage']);
+
+    Route::get('/requests', [ReservationController::class, 'index']);
+    Route::get('/requests/{reservation}', [ReservationController::class, 'show']);
+    Route::middleware('role:tenant')->group(function () {
+        Route::post('/requests', [ReservationController::class, 'store']);
+        Route::put('/requests/{reservation}/cancel', [ReservationController::class, 'cancel']);
+    });
+    Route::middleware('role:owner')->group(function () {
+        Route::put('/requests/{reservation}/accept', [ReservationController::class, 'accept']);
+        Route::put('/requests/{reservation}/reject', [ReservationController::class, 'reject']);
+    });
 });
