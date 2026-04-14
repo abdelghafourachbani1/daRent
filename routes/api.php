@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:tenant')->group(function () {
         Route::post('/properties/{propertyId}/reviews', [ReviewController::class, 'store']);
     });
-    
+
     Route::get('/properties/{propertyId}/reviews', [ReviewController::class, 'index']);
 
     Route::post('/conversations', [MessagingController::class, 'createConversation']);

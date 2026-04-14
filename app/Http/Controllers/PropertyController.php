@@ -138,7 +138,7 @@ class PropertyController extends Controller {
         return response()->json($properties);
     }
 
-    public function marksAsRented(Request $request, Property $property): JsonResponse {
+    public function markAsRented(Request $request, Property $property): JsonResponse {
         if ($request->user()->id !== $property->user_id) {
             return response()->json(['message' => 'acces refuser'],403);
         }
