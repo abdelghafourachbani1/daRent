@@ -26,7 +26,7 @@ class PropertyController extends Controller {
             'city',
             'category',
             'media',
-            'equiêments',
+            'equipements',
             'reviews',
         ]);
         $averageRating = $property->calculateAverageRating();
