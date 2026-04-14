@@ -13,7 +13,7 @@ class PropertyController extends Controller {
 
         $properties = Property::with(['owner','city','category','media'])
             ->where('status','available')
-            ->wher('availability',true)
+            ->where('availability',true)
             ->latest()
             ->paginate(12);
 

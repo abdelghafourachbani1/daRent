@@ -33,23 +33,24 @@ class Property extends Model
 
     public function publish(): bool {
         return $this->update([
-            'status' => 'available',
+            'status'       => 'available',
             'availability' => true,
-            'date_envoie' => now()->toDateString(),
+            'date_envoie'  => now()->toDateString(),
         ]);
     }
 
     public function archive(): void {
         $this->update([
-            'status' => 'archived',
+            'status'       => 'archived',
             'availability' => false,
         ]);
-    } 
+    }
+ 
 
     public function updateDetails(array $data): void {
         $this->update($data);
     }
-
+ 
     public function calculateAverageRating(): float {
         return round($this->reviews()->avg('note') ?? 0, 1);
     }
@@ -63,11 +64,31 @@ class Property extends Model
     }
 
     public function category() {
-        return $this->belongsTo(category::class);
+        return $this->belongsTo(Category::class);
+    }
+
+    public function media() {
+        return $this->hasMany(Media::class);
+    }
+
+    public function reservations() {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function favorites() {
+        return $this->hasMany(Favorite::class);
+    }
+
+    public function reviews() {
+        return $this->hasMany(Review::class);
     }
 
     public function equipements() {
         return $this->belongsToMany(Equipement::class, 'property_equipement');
     }
 
+    public function messages() {
+        return $this->hasMany(Message::class);
+    }
 }
+ 
