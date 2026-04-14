@@ -63,7 +63,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
        return response()->json([
-            'message'    => 'Connexion réussie',
+            'message'    => 'Connexion reussie',
             'user'       => [
                 'id'        => $user->id,
                 'nom'       => $user->nom,
@@ -117,7 +117,7 @@ class AuthController extends Controller
 
         $updated = $user->updateProfile($data);
 
-                return response()->json([
+        return response()->json([
             'message' => 'profile updated successfuly',
             'user'    => [
                 'id'        => $user->fresh()->id, 
@@ -133,8 +133,9 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse{
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
+        return response()->json([   
             'message' => 'deconnexion reussite',
         ]);
     }
+    
 }

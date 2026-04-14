@@ -30,7 +30,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/properties/{property}/rent', [PropertyController::class, 'markAsRented']);
         Route::get('/properties/{property}/stats', [PropertyController::class, 'stats']);
         Route::post('/properties/{property}/images', [PropertyController::class, 'uploadImages']);
-        Route::post('/properties/{property}/images', [PropertyController::class, 'uploadImages']);
     });
 
     Route::get('/favorites', [FavoriteController::class, 'index']);
@@ -41,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:tenant')->group(function () {
         Route::post('/properties/{propertyId}/reviews', [ReviewController::class, 'store']);
     });
+    
     Route::get('/properties/{propertyId}/reviews', [ReviewController::class, 'index']);
 
     Route::post('/conversations', [MessagingController::class, 'createConversation']);
@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/requests', [ReservationController::class, 'index']);
     Route::get('/requests/{reservation}', [ReservationController::class, 'show']);
+
     Route::middleware('role:tenant')->group(function () {
         Route::post('/requests', [ReservationController::class, 'store']);
         Route::put('/requests/{reservation}/cancel', [ReservationController::class, 'cancel']);
