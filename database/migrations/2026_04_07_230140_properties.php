@@ -27,15 +27,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('set null');
-
             $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('set null');
-
-            $table->string('titre');
-
+            $table->string('titre');    
             $table->text('description');
-
             $table->string('adress');
-
             $table->decimal('prix_mensuel', 10, 2);
             $table->string('type');
             $table->enum('status', ['available', 'rented', 'archived'])->default('available');
@@ -43,15 +38,12 @@ return new class extends Migration
             $table->integer('bathrooms')->default(1);
             $table->boolean('availability')->default(true); 
             $table->date('date_envoie')->nullable();
-
             $table->timestamps();
         });
 
         Schema::create('media', function (Blueprint $table) {
             $table->id();
-
             $table->foreignId('property_id')->constrained('properties')->onDelete('cascade');
-
             $table->text('url_fichier');     
             $table->string('type_fichier');  
             $table->timestamps();

@@ -15,7 +15,7 @@ class CheckRole
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if ($request->user()) {
+        if (!$request->user()) {
             return response()->json([
                 'message' => 'non authentifier, veuillez vous connecter',
             ],401);

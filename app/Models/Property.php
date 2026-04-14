@@ -19,7 +19,7 @@ class Property extends Model
         'prix_mensuel',
         'type',
         'status',
-        'bedrooms',
+        'bedrooms', 
         'bathrooms',
         'availability',
         'date_envoie',
@@ -64,6 +64,10 @@ class Property extends Model
 
     public function category() {
         return $this->belongsTo(category::class);
+    }
+
+    public function equipements() {
+        return $this->belongsToMany(Equipement::class, 'property_equipement');
     }
 
 }
