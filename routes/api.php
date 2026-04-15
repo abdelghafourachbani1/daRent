@@ -7,6 +7,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MessagingController;
 use App\Http\Controllers\Api\ReservationController;
+use App\Http\Controllers\PropertySearchController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register',[AuthController::class, 'register']);
@@ -15,6 +16,7 @@ Route::prefix('auth')->group(function () {
 
 Route::get('/properties', [PropertyController::class, 'index']);
 Route::get('/properties/{property}', [PropertyController::class, 'show']);
+Route::get('/properties', [PropertySearchController::class, 'index']);
  
 Route::middleware('auth:sanctum')->group(function () {
  

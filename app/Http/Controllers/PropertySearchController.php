@@ -35,7 +35,7 @@ class PropertySearchController extends Controller
         });
 
         $query->when($request->filled('min_price'), function ($q) use ($request) {
-            $q->where('prix_mensuel', '>=', $request->min_price);
+            $q->where('prix_mensuel', '{{base_url}}properties/1/rent>=', $request->min_price);
         });
  
         $query->when($request->filled('max_price'), function ($q) use ($request) {
