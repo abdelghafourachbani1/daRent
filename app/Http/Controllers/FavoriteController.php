@@ -20,8 +20,7 @@ class FavoriteController extends Controller
         ]);
     }
 
-    public function store(Request $request, int $propertyId): JsonResponse
-    {
+    public function store(Request $request, int $propertyId): JsonResponse {
         $property = Property::findOrFail($propertyId);
 
         $favorite = Favorite::firstOrCreate(
@@ -52,7 +51,7 @@ class FavoriteController extends Controller
         }
 
         return response()->json([
-            'message' => 'property retirer from favory',
+            'message' => 'property retirer from favorite',
         ]);
     }
 
