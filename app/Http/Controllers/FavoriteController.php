@@ -7,7 +7,6 @@ use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
-use function Symfony\Component\Clock\now;
 
 class FavoriteController extends Controller
 {
@@ -21,37 +20,25 @@ class FavoriteController extends Controller
         ]);
     }
 
-    public function store(Request $request, int $propertyId): JsonResponse {
+    public function store(Request $request, int $propertyId): JsonResponse
+    {
         $property = Property::findOrFail($propertyId);
-        [$favorite, $created] = [
-            Favorite::firstOrCreate(
-                ['user_id' => $request->user()->id, 'property_id' => $propertyId],
-                ['date_ajout' => now()->toDateString()]
-            ),
-            false
-        ];
 
-        $wasNew = !Favorite::where('user_id', $request->user()->id)
-                           ->where('property_id', $propertyId)
-                           ->whereDate('date_ajout', today())
-                           ->exists();
- 
-        if (!$wasNew) {
-            return response()->json([
-                'message' => 'Cette propriété est déjà dans vos favoris.',
-            ], 409); 
-        }
- 
-        Favorite::firstOrCreate(
-            ['user_id' => $request->user()->id, 'property_id' => $propertyId],
+        $favorite = Favorite::firstOrCreate(
+            ['user_id' => $request->user()->id,'property_id' => $propertyId],
             ['date_ajout' => now()->toDateString()]
         );
- 
+
+        if (!$favorite->wasRecentlyCreated) {
+            return response()->json([
+                'message' => 'cette property deja exist sur votre favorite',
+            ], 409);
+        }
+
         return response()->json([
-            'message'  => 'Propriété ajoutée aux favoris',
+            'message'  => 'property addedd successfully',
             'property' => $property->only(['id', 'titre', 'prix_mensuel']),
         ], 201);
-
     }
 
     public function destroy(Request $request, int $propertyId): JsonResponse {
