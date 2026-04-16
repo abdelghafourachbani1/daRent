@@ -156,30 +156,31 @@ class PropertyController extends Controller {
 
     public function uploadImages(Request $request, Property $property): JsonResponse {
         if ($request->user()->id !== $property->user_id) {
-            return response()->json(['message' => 'acces refuse'],403);
+            return response()->json(['message' => 'acces refuse'], 403);
         }
 
         $request->validate([
             'images' => 'required|array|max:10',
-            'images.*' => 'image|mimes:png,jpg,jpeg,webp|max:5120',
+            'images.*' => 'required|url',
         ]);
-        $uploades = [];
 
-        foreach ($request->file('images') as $image) {
-            $path = $image->store('properties','public');
+        $uploaded = [];
+
+        foreach ($request->images as $imageUrl) {
 
             $media = Media::create([
                 'property_id' => $property->id,
-                'url_fichier' => $path,
+                'url_fichier' => $imageUrl, 
                 'type_fichier' => 'image',
             ]);
 
             $uploaded[] = $media;
         }
+
         return response()->json([
-            'message' => count($uploaded) . 'images uploaded avec succes',
+            'message' => count($uploaded) . ' images saved successfully',
             'media' => $uploaded,
-        ],201);
+        ], 201);
     }
 
     public function stats(Request $request, Property $property): JsonResponse {

@@ -19,7 +19,7 @@ Route::get('/properties/{property}', [PropertyController::class, 'show']);
 Route::get('/properties', [PropertySearchController::class, 'index']);
  
 Route::middleware('auth:sanctum')->group(function () {
- 
+    
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/me', [AuthController::class, 'updateProfile']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
