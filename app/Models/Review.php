@@ -21,8 +21,7 @@ class Review extends Model
         'date_publication' => 'date',
     ];
 
-    public function user()
-    {
+    public function user() {
         return $this->belongsTo(User::class);
     }
 
