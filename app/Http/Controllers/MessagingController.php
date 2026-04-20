@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 class MessagingController extends Controller
 {
 
+    // only tenan
     public function createConversation(Request $request): JsonResponse {
             $request->validate([
                 'property_id' => 'required|exists:properties,id',
@@ -23,22 +24,22 @@ class MessagingController extends Controller
     
             if (!$request->user()->isTenant()) {
                 return response()->json([
-                    'message' => 'Seul un locataire peut initier une conversation.',
+                    'message' => 'Seul un locataire peut initialiser une conversation.',
                 ], 403);
             }
-    
+            
             if ($property->user_id === $request->user()->id) {
                 return response()->json([
                     'message' => 'Vous ne pouvez pas envoyer un message pour votre propre propriété.',
                 ], 422);
             }
-    
+            
             $conversation = Conversation::firstOrCreate([
                 'tenant_id'   => $request->user()->id,
                 'owner_id'    => $property->user_id,
                 'property_id' => $property->id,
             ]);
-    
+            
             $message = Message::create([
                 'conversation_id' => $conversation->id,
                 'sender_id'       => $request->user()->id,

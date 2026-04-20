@@ -17,21 +17,11 @@ class MessageSent implements ShouldBroadcast
 
     public Message $message;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct(Message $message)
-    {
+    public function __construct(Message $message) {
         $this->message = $message->load('sender:id,nom,avatar');
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
-    {
+    public function broadcastOn(): array {
         return [
             new PrivateChannel('conversation.' . $this->message->conversation_id),
         ];
@@ -41,8 +31,7 @@ class MessageSent implements ShouldBroadcast
         return 'MessageSent';
     }
 
-    public function broadcastWith(): array
-    {
+    public function broadcastWith(): array {
         return [
             'message' => [
                 'id'              => $this->message->id,

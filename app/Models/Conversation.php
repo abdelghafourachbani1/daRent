@@ -16,6 +16,7 @@ class Conversation extends Model
     ];
 
     public function isParticipant(int $userId): bool {
+        // to join a channel he shouls be (tenant or owner)
         return $this->tenant_id === $userId || $this->owner_id === $userId;
     }
  
