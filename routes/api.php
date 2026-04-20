@@ -1,13 +1,13 @@
 <?php
 
+use App\Http\Controllers\ReservationController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\MessagingController;
-use App\Http\Controllers\Api\ReservationController;
-use App\Http\Controllers\PropertySearchController;
+use App\Http\Controllers\PropertySearchController;  
 
 
 Route::prefix('auth')->group(function () {
@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/properties/{property}/rent', [PropertyController::class, 'markAsRented']);
         Route::get('/properties/{property}/stats', [PropertyController::class, 'stats']);
         Route::post('/properties/{property}/images', [PropertyController::class, 'uploadImages']);
-        Route::put('/requests/{reservation}/accept', [ReservationController::class, 'accept']);
+        Route::put('/requests/{reservation}/accept  ', [ReservationController::class, 'accept']);
         Route::put('/requests/{reservation}/reject', [ReservationController::class, 'reject']);
     });
 
@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/properties/{propertyId}/reviews', [ReviewController::class, 'store']);
         Route::post('/conversations', [MessagingController::class, 'createConversation']);
         Route::post('/requests', [ReservationController::class, 'store']);
-        Route::put('/requests/{reservation}/cancel', [ReservationController::class, 'cancel']);
+        Route::put('/requests/{reservation}/cancel', [ReservationController::class, 'cancel']);    
     });
 
     Route::get('/favorites', [FavoriteController::class, 'index']);

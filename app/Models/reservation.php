@@ -55,7 +55,7 @@ class reservation extends Model
         $this->update(['status' => 'accepted']);
  
         $this->property->update([
-            'status'       => 'rented',
+            'status' => 'rented',
             'availability' => false,
         ]);
     }

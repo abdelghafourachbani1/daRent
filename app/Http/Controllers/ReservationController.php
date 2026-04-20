@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Events\ReservationStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Property;
-use App\Models\Reservation;
+use App\Models\reservation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -29,7 +29,7 @@ class ReservationController extends Controller
         return response()->json($query->latest()->paginate(10));
     }
 
-    public function store(Request $request): JsonResponse {
+    public function store(Request $request): JsonResponse { 
         $request->validate([
             'property_id' => 'required|exists:properties,id',
             'date_debut'  => 'required|date|after:today',
@@ -73,14 +73,14 @@ class ReservationController extends Controller
         if (!$reservation->checkAvailability()) {
             $reservation->delete();
             return response()->json([
-                'message' => 'Les dates sélectionnées ne sont pas disponibles.',
+                'message' => 'les dates selectionner ne sont pas disponibles',
             ], 422);
         }
 
         $reservation->load(['property:id,titre', 'owner:id,nom']);
 
         return response()->json([
-            'message'     => 'Demande envoyée avec succès',
+            'message'     => 'demande send avec succes',
             'reservation' => $reservation,
         ], 201);
     }
@@ -103,7 +103,7 @@ class ReservationController extends Controller
 
     public function accept(Request $request, Reservation $reservation): JsonResponse {
         if ($reservation->owner_id !== $request->user()->id) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
+            return response()->json(['message' => 'acces refuse'], 403);
         }
 
         if ($reservation->status !== 'pending') {
@@ -111,9 +111,7 @@ class ReservationController extends Controller
                 'message' => 'Cette demande a déjà été traitée.',
             ], 422);
         }
-
         $reservation->accept();
-
         broadcast(new ReservationStatusChanged($reservation->fresh()));
 
         return response()->json([
@@ -122,8 +120,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function reject(Request $request, Reservation $reservation): JsonResponse
-    {
+    public function reject(Request $request, Reservation $reservation): JsonResponse {
         if ($reservation->owner_id !== $request->user()->id) {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
@@ -142,8 +139,7 @@ class ReservationController extends Controller
         ]);
     }
 
-    public function cancel(Request $request, Reservation $reservation): JsonResponse
-    {
+    public function cancel(Request $request, Reservation $reservation): JsonResponse {
         if ($reservation->tenant_id !== $request->user()->id) {
             return response()->json(['message' => 'Accès refusé.'], 403);
         }
