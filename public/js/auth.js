@@ -20,7 +20,7 @@ const AuthManager = {
          return this.getUser()?.role === 'tenant'; 
     },
     clear() {
-        localStorage.removeItem('darent_token');
+        localStorage.removeItem('darent_token'); 
         localStorage.removeItem('darent_user');
     },
     requireAuth() {
