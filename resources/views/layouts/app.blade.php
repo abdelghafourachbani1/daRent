@@ -171,7 +171,6 @@
             document.getElementById('nav-role').textContent = user.role === 'owner' ? 'Propriétaire' : 'Locataire';
             document.getElementById('menu-name').textContent = user.nom;
             document.getElementById('menu-role').textContent = user.role === 'owner' ? 'Propriétaire' : 'Locataire';
-            document.getElementById('nav-avatar').src = Helpers.avatarUrl(user.avatar, user.nom);
             if (user.role === 'owner') {
                 document.getElementById('nav-owner-btn').classList.remove('hidden');
                 document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('hidden'));
