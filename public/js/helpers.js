@@ -2,39 +2,38 @@ const Helpers = {
     formatPrice(price) {
         return new Intl.NumberFormat('fr-MA').format(price) + ' MAD / mois';
     },
+
     formatDate(dateStr) {
         if (!dateStr) return '';
         return new Date(dateStr).toLocaleDateString('fr-MA', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
     },
+
     timeAgo(dateStr) {
         const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
-        if (diff < 60) return 'il y a quelques secondes';
-        if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
+        if (diff < 60)    return 'il y a quelques secondes';
+        if (diff < 3600)  return `il y a ${Math.floor(diff / 60)} min`;
         if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
         return this.formatDate(dateStr);
     },
-    imageUrl(path) {
-        if (!path) return '/images/placeholder.jpg';
-        if (path.startsWith('http')) return path;
-        return `/storage/${path}`;
+
+    bedsLabel(n) {
+        return n === 1 ? '1 chambre' : `${n} chambres`;
     },
-    avatarUrl(path, name) {
-        if (path) return this.imageUrl(path);
-        const initials = name?.split(' ').map(w => w[0]).join('').toUpperCase() || '?';
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=ff385c&color=fff&size=80`;
+
+    truncate(str, max = 80) {
+        return str?.length > max ? str.slice(0, max) + '...' : str;
     },
-    bedsLabel(n) { return n === 1 ? '1 chambre' : `${n} chambres`; },
-    truncate(str, max = 80) { return str?.length > max ? str.slice(0, max) + '...' : str; },
+
     statusBadge(status) {
         const map = {
-            available: ['badge-available','Disponible'],
-            rented:['badge-rented','Loué'],
-            archived:['badge-rented','Archivé'],
-            pending:['badge-pending','En attente'],
-            accepted:['badge-accepted','Accepté'],
-            rejected:['badge-rented','Refusé'],
+            available: ['badge-available', 'Disponible'],
+            rented:    ['badge-rented',    'Loué'],
+            archived:  ['badge-rented',    'Archivé'],
+            pending:   ['badge-pending',   'En attente'],
+            accepted:  ['badge-accepted',  'Accepté'],
+            rejected:  ['badge-rented',    'Refusé'],
         };
         const [cls, label] = map[status] || ['badge', status];
         return `<span class="badge ${cls}">${label}</span>`;
