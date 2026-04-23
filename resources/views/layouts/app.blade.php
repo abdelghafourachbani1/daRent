@@ -48,7 +48,6 @@
                 <div id="nav-user" class="hidden relative">
                     <button onclick="toggleUserMenu()"
                         class="flex items-center gap-2.5 bg-navy-light border border-gray-600 rounded-xl px-3 py-2 hover:border-primary-500 transition">
-                        <img id="nav-avatar" src="/images/placeholder.jpg"
                              class="w-7 h-7 rounded-full object-cover" alt="avatar">
                         <div class="hidden sm:block text-left">
                             <p id="nav-username" class="text-white text-xs font-semibold leading-none"></p>

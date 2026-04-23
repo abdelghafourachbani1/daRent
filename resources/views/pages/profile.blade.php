@@ -8,7 +8,6 @@
     {{-- Avatar card --}}
     <div class="flex items-center gap-6 mb-8 p-6 bg-white rounded-2xl shadow-card">
         <div class="relative">
-            <img id="profile-avatar" src="/images/placeholder.jpg"
                  class="w-20 h-20 rounded-full object-cover border-4 border-primary-100">
             <label for="avatar-input"
                 class="absolute bottom-0 right-0 bg-primary-500 text-white rounded-full w-7 h-7
