@@ -1,4 +1,5 @@
 const Helpers = {
+
     formatPrice(price) {
         return new Intl.NumberFormat('fr-MA').format(price) + ' MAD / mois';
     },
@@ -9,13 +10,23 @@ const Helpers = {
             day: 'numeric', month: 'long', year: 'numeric'
         });
     },
-
     timeAgo(dateStr) {
         const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
         if (diff < 60)    return 'il y a quelques secondes';
         if (diff < 3600)  return `il y a ${Math.floor(diff / 60)} min`;
         if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
         return this.formatDate(dateStr);
+    },
+
+    imageUrl(path) {
+        if (!path) return '/images/default-property.svg';
+        if (path.startsWith('http')) return path;
+        return `/storage/${path}`;
+    },
+
+    avatarUrl(path, name) {
+        if (path) return this.imageUrl(path);
+        return '/images/default-avatar.svg';
     },
 
     bedsLabel(n) {

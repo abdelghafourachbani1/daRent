@@ -8,6 +8,7 @@
     {{-- Avatar card --}}
     <div class="flex items-center gap-6 mb-8 p-6 bg-white rounded-2xl shadow-card">
         <div class="relative">
+            <img id="profile-avatar" src="/images/default-avatar.svg"
                  class="w-20 h-20 rounded-full object-cover border-4 border-primary-100">
             <label for="avatar-input"
                 class="absolute bottom-0 right-0 bg-primary-500 text-white rounded-full w-7 h-7
@@ -88,6 +89,8 @@
         document.getElementById('p-nom').value   = u.nom   || '';
         document.getElementById('p-email').value = u.email || '';
         document.getElementById('p-tel').value   = u.telephone || '';
+        // Set avatar image
+        document.getElementById('profile-avatar').src = Helpers.avatarUrl(u.avatar, u.nom);
     });
     async function saveProfile(e) {
         e.preventDefault();
@@ -98,6 +101,8 @@
             AuthManager.save(AuthManager.getToken(), data.user);
             showSuccess('Profil mis à jour !');
             document.getElementById('profile-name').textContent = data.user.nom;
+            // Update avatar in case name changed
+            document.getElementById('profile-avatar').src = Helpers.avatarUrl(data.user.avatar, data.user.nom);
         } catch (e) { showError(e.message); }
         finally { btn.disabled = false; btn.textContent = 'Enregistrer les modifications'; }
     }
@@ -121,6 +126,8 @@
         try {
             const data = await Auth.update(fd);
             AuthManager.save(AuthManager.getToken(), data.user);
+            // Update the displayed avatar
+            document.getElementById('profile-avatar').src = Helpers.avatarUrl(data.user.avatar, data.user.nom);
             Toast.success('Photo mise à jour !');
         } catch (e) { Toast.error(e.message); }
     }
