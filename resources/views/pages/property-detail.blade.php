@@ -3,21 +3,21 @@
 @section('title', 'Détail du bien — DAR-RENT')
 @section('content')
 
-{{-- Gallery — placeholder only, no images --}}
-<div class="grid grid-cols-4 grid-rows-2 gap-2 max-h-[480px] overflow-hidden px-0 md:px-8 mt-4 rounded-2xl">
+{{-- Gallery — renders property media dynamically --}}
+<div id="property-gallery" class="grid grid-cols-4 grid-rows-2 gap-2 max-h-[480px] overflow-hidden px-0 md:px-8 mt-4 rounded-2xl">
     <div class="col-span-2 row-span-2 bg-gray-200 overflow-hidden rounded-l-2xl flex items-center justify-center">
-        <img src="/images/default-property.svg" class="w-full h-full object-cover" alt="Property image">
+        <img id="gallery-main-image" src="/images/default-property.svg" class="w-full h-full object-cover" alt="Property image">
     </div>
-    <div class="bg-gray-200 overflow-hidden flex items-center justify-center">
+    <div id="gallery-thumb-1" class="bg-gray-200 overflow-hidden flex items-center justify-center">
         <img src="/images/default-property.svg" class="w-full h-full object-cover opacity-50" alt="Property image">
     </div>
-    <div class="bg-gray-200 overflow-hidden rounded-tr-2xl flex items-center justify-center">
+    <div id="gallery-thumb-2" class="bg-gray-200 overflow-hidden rounded-tr-2xl flex items-center justify-center">
         <img src="/images/default-property.svg" class="w-full h-full object-cover opacity-50" alt="Property image">
     </div>
-    <div class="bg-gray-200 overflow-hidden flex items-center justify-center">
+    <div id="gallery-thumb-3" class="bg-gray-200 overflow-hidden flex items-center justify-center">
         <img src="/images/default-property.svg" class="w-full h-full object-cover opacity-50" alt="Property image">
     </div>
-    <div class="bg-gray-200 overflow-hidden rounded-br-2xl flex items-center justify-center">
+    <div id="gallery-thumb-4" class="bg-gray-200 overflow-hidden rounded-br-2xl flex items-center justify-center">
         <img src="/images/default-property.svg" class="w-full h-full object-cover opacity-50" alt="Property image">
     </div>
 </div>
@@ -194,6 +194,38 @@
             document.getElementById('card-price').textContent         = new Intl.NumberFormat('fr-MA').format(p.prix_mensuel) + ' MAD';
             document.getElementById('rating-badge').textContent       = data.average_rating > 0 ? `★ ${data.average_rating}` : '';
             document.title = `${p.titre} — DAR-RENT`;
+
+            // Gallery images
+            const galleryMedia = p.media || [];
+            const mainImg = document.getElementById('gallery-main-image');
+            const thumbs = [
+                document.getElementById('gallery-thumb-1'),
+                document.getElementById('gallery-thumb-2'),
+                document.getElementById('gallery-thumb-3'),
+                document.getElementById('gallery-thumb-4'),
+            ];
+
+            if (galleryMedia.length) {
+                mainImg.src = Helpers.imageUrl(galleryMedia[0].url_fichier);
+                mainImg.classList.remove('opacity-50');
+                thumbs.forEach((thumb, index) => {
+                    const img = thumb.querySelector('img');
+                    if (galleryMedia[index + 1]) {
+                        img.src = Helpers.imageUrl(galleryMedia[index + 1].url_fichier);
+                        img.classList.remove('opacity-50');
+                    } else {
+                        img.src = '/images/default-property.svg';
+                        img.classList.add('opacity-50');
+                    }
+                });
+            } else {
+                mainImg.src = '/images/default-property.svg';
+                thumbs.forEach((thumb) => {
+                    const img = thumb.querySelector('img');
+                    img.src = '/images/default-property.svg';
+                    img.classList.add('opacity-50');
+                });
+            }
 
             // Equipements
             const eq = document.getElementById('prop-equipements');

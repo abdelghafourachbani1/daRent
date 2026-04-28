@@ -9,7 +9,7 @@
     </div>
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         <div class="bg-white border-l-4 border-yellow-400 rounded-2xl p-5 shadow-card">
             <p id="stat-pending"  class="text-3xl font-bold text-dark">—</p>
             <p class="text-muted text-sm mt-1">En attente</p>
@@ -21,6 +21,16 @@
         <div class="bg-white border-l-4 border-red-400 rounded-2xl p-5 shadow-card">
             <p id="stat-rejected" class="text-3xl font-bold text-dark">—</p>
             <p class="text-muted text-sm mt-1">Refusées</p>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="stat-studio" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Demandes pour Studios</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="stat-riad" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Demandes pour Riads</p>
         </div>
     </div>
 
@@ -57,9 +67,11 @@
         updateStats(allReqs);renderReqs(allReqs);
     });
     function updateStats(list){
-        document.getElementById('stat-pending').textContent =list.filter(r=>r.status==='pending').length;
-        document.getElementById('stat-accepted').textContent=list.filter(r=>r.status==='accepted').length;
-        document.getElementById('stat-rejected').textContent=list.filter(r=>r.status==='rejected').length;
+        document.getElementById('stat-pending').textContent  = list.filter(r=>r.status==='pending').length;
+        document.getElementById('stat-accepted').textContent = list.filter(r=>r.status==='accepted').length;
+        document.getElementById('stat-rejected').textContent = list.filter(r=>r.status==='rejected').length;
+        document.getElementById('stat-studio').textContent  = list.filter(r=>r.property?.type==='studio').length;
+        document.getElementById('stat-riad').textContent    = list.filter(r=>r.property?.type==='riad').length;
     }
     function filterReq(status){
         document.querySelectorAll('.tab-pill').forEach(b=>b.classList.toggle('active',b.dataset.s===status));

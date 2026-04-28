@@ -28,7 +28,7 @@ const Auth = {
     register: (data) => request('POST','/auth/register', data),
     login: (data) => request('POST', '/auth/login', data),
     me: () => request('GET','/auth/me'),
-    update:(data) => request('PUT','/auth/me', data),
+    update:(data, isFormData = false) => request('PUT','/auth/me', data, isFormData),
     logout:()=> request('POST','/auth/logout'),
 };
 

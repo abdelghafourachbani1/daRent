@@ -90,6 +90,26 @@
         </div>
 
         {{-- Step 3: Photos --}}
+        <div class="bg-white rounded-2xl shadow-card p-6">
+            <h2 class="text-base font-bold text-dark mb-5 pb-3 border-b border-gray-100 flex items-center gap-2">
+                <span class="w-6 h-6 bg-primary-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                Photos du bien
+            </h2>
+            <div>
+                <label class="block text-sm font-semibold text-dark mb-3">Ajouter des photos (max 5)</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-primary-500 transition cursor-pointer" onclick="document.getElementById('f-images').click()">
+                    <input type="file" id="f-images" name="images[]" multiple accept="image/*" onchange="previewImages(this)" hidden>
+                    <svg class="w-8 h-8 text-muted mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <p class="text-muted text-sm">Cliquez ou déposez vos images (JPEG, PNG, GIF)</p>
+                    <p class="text-xs text-gray-400 mt-1">Sélectionnez jusqu'à 5 images, 5 MB maximum par image.</p>
+                </div>
+                <p id="images-count" class="text-xs text-gray-500 mt-2">0 / 5 images sélectionnées</p>
+                <div id="image-preview" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4"></div>
+                <div id="existing-image-preview" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6"></div>
+            </div>
+        </div>
 
         <div class="flex justify-end gap-3">
             <a href="/my-properties" class="btn-outline px-6 py-3">Annuler</a>
@@ -118,14 +138,39 @@
             document.getElementById('f-price').value = p.prix_mensuel;
             document.getElementById('f-beds').value  = p.bedrooms;
             document.getElementById('f-baths').value = p.bathrooms;
+
+            const existingPreview = document.getElementById('existing-image-preview');
+            if(p.media?.length){
+                existingPreview.innerHTML = `<p class="text-sm font-semibold text-dark mb-2">Images existantes</p>`;
+                p.media.slice(0,5).forEach(media => {
+                    existingPreview.innerHTML += `
+                        <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 border-2 border-gray-200">
+                            <img src="${Helpers.imageUrl(media.url_fichier)}" class="w-full h-full object-cover">
+                        </div>`;
+                });
+            }
         }
     });
 
     function previewImages(input){
-        const preview=document.getElementById('image-preview');preview.innerHTML='';
-        Array.from(input.files).slice(0,10).forEach(file=>{
-            const reader=new FileReader();
-            reader.onload=e=>{preview.innerHTML+=`<div class="aspect-square rounded-xl overflow-hidden bg-gray-100 border-2 border-primary-100"><img src="${e.target.result}" class="w-full h-full object-cover"></div>`;};
+        const preview = document.getElementById('image-preview');
+        const counter = document.getElementById('images-count');
+        preview.innerHTML = '';
+        const selectedFiles = Array.from(input.files).slice(0,5);
+        counter.textContent = `${selectedFiles.length} / 5 images sélectionnées`;
+
+        if (input.files.length > 5) {
+            Toast.warning('Seulement les 5 premières images seront téléchargées.');
+        }
+
+        selectedFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.innerHTML += `
+                    <div class="aspect-square rounded-xl overflow-hidden bg-gray-100 border-2 border-primary-100">
+                        <img src="${e.target.result}" class="w-full h-full object-cover">
+                    </div>`;
+            };
             reader.readAsDataURL(file);
         });
     }
@@ -152,13 +197,25 @@
         };
 
         try {
+            let propertyId;
             if (IS_EDIT) {
                 await Properties.update(PROPERTY_ID, payload);
+                propertyId = PROPERTY_ID;
                 Toast.success('Bien mis à jour !');
             } else {
-                await Properties.create(payload);
+                const resp = await Properties.create(payload);
+                propertyId = resp.property.id;
                 Toast.success('Bien publié avec succès !');
             }
+
+            // Upload images if selected
+            const imageFiles = Array.from(document.getElementById('f-images').files).slice(0,5);
+            if (imageFiles.length > 0) {
+                const formData = new FormData();
+                imageFiles.forEach(file => formData.append('images[]', file));
+                await Properties.uploadImages(propertyId, formData);
+            }
+
             setTimeout(() => { window.location.href = '/my-properties'; }, 1000);
 
         } catch(err) {

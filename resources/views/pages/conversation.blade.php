@@ -81,11 +81,28 @@
         try{const data=await Messaging.sendMessage({conversation_id:CONV_ID,contenu:content});appendMessage(data.data);}catch(e){Toast.error(e.message);input.value=content;}
     }
 
-    function setupEcho() {
-        try {
-            const echo=new Echo({broadcaster:'reverb',key:'my-app-key',wsHost:'localhost',wsPort:8080,forceTLS:false,enabledTransports:['ws'],authEndpoint:'/broadcasting/auth',auth:{headers:{Authorization:'Bearer '+AuthManager.getToken()}}});
-            echo.private(`conversation.${CONV_ID}`).listen('MessageSent',(event)=>appendMessage(event.message));
-        } catch(e) {}
+function setupEcho() {
+    // destroy previous instance if exists
+    if (window.echoInstance) {
+        window.echoInstance.disconnect();
     }
+
+    window.echoInstance = new Echo({
+        broadcaster:       'reverb',
+        key:               'darrent-key',       // must match REVERB_APP_KEY in .env
+        wsHost:            'localhost',
+        wsPort:            8080,
+        wssPort:           8080,
+        forceTLS:          false,
+        enabledTransports: ['ws'],
+        authEndpoint:      '/api/broadcasting/auth',  // ← important: /api prefix
+        auth: {
+            headers: {
+                'Authorization': 'Bearer ' + AuthManager.getToken(),
+                'Accept':        'application/json',
+            }
+        },
+    });
+}
 </script>
 @endpush

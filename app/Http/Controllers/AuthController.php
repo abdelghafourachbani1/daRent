@@ -101,7 +101,7 @@ class AuthController extends Controller
             'email' => 'sometimes|email|unique:users,email,'.$user->id,
             'telephone' => 'sometimes|nullable|string|max:20',
             'password' => 'sometimes|string|min:8|confirmed',
-            'avatar' => 'sometimes|nullable|image|max:2048',
+            'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $data = $request->only(['nom','email','telephone']);
@@ -110,12 +110,26 @@ class AuthController extends Controller
             $data['password'] = $request->password;
         }
 
+        // Check if avatar file is present
+        file_put_contents('/tmp/avatar_debug.log', "All files: " . json_encode(array_keys($request->files->all())) . "\n", FILE_APPEND);
+        file_put_contents('/tmp/avatar_debug.log', "All input: " . json_encode(array_keys($request->all())) . "\n", FILE_APPEND);
+        
         if($request->hasFile('avatar')) {
+            // Store the file
             $path = $request->file('avatar')->store('avatars','public');
+            // Add to data array
             $data['avatar'] = $path;
+            // Debug: write to file
+            file_put_contents('/tmp/avatar_debug.log', "Avatar stored: $path, data array: " . json_encode($data) . "\n", FILE_APPEND);
         }
 
+        // Debug: write all request data
+        file_put_contents('/tmp/avatar_debug.log', "Has file: " . ($request->hasFile('avatar') ? 'yes' : 'no') . "\n", FILE_APPEND);
+        file_put_contents('/tmp/avatar_debug.log', "Data array before update: " . json_encode($data) . "\n", FILE_APPEND);
+
         $updated = $user->updateProfile($data);
+
+        file_put_contents('/tmp/avatar_debug.log', "Update result: " . ($updated ? 'true' : 'false') . "\n", FILE_APPEND);
 
         return response()->json([
             'message' => 'profile updated successfuly',
@@ -126,16 +140,42 @@ class AuthController extends Controller
                 'role'      => $user->fresh()->role,
                 'telephone' => $user->fresh()->telephone,
                 'avatar'    => $user->fresh()->avatar,
+                'created_at'=> $user->fresh()->created_at,
             ],
         ]);
     }
 
-    public function logout(Request $request): JsonResponse{
+    public function uploadAvatar(Request $request): JsonResponse {
+        $user = $request->user();
+
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars','public');
+            $user->update(['avatar' => $path]);
+        }
+
+        return response()->json([
+            'message' => 'avatar uploaded successfully',
+            'user'    => [
+                'id'        => $user->fresh()->id,
+                'nom'       => $user->fresh()->nom,
+                'email'     => $user->fresh()->email,
+                'role'      => $user->fresh()->role,
+                'telephone' => $user->fresh()->telephone,
+                'avatar'    => $user->fresh()->avatar,
+                'created_at'=> $user->fresh()->created_at,
+            ],
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([   
+        return response()->json([
             'message' => 'deconnexion reussite',
         ]);
     }
-    
 }

@@ -1,4 +1,3 @@
-{{-- resources/views/pages/ — DAY 5 --}}
 @extends('layouts.app')
 @section('title', 'Messages — DAR-RENT')
 @section('content')
@@ -16,7 +15,7 @@
                 <p class="text-sm font-bold text-dark">Conversations</p>
             </div>
             <div id="conv-list" class="flex-1 overflow-y-auto">
-                @for ($i = 0; $i < 4; $i++)
+                @for ($i = 0; $i < 3; $i++)
                 <div class="animate-pulse flex gap-3 px-4 py-3 border-b border-gray-50">
                     <div class="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0"></div>
                     <div class="flex-1">
@@ -46,85 +45,234 @@
             </div>
         </div>
     </div>
+
+    {{-- WS status indicator (for debugging) --}}
+    <div class="mt-2 flex items-center gap-2">
+        <div id="ws-dot" class="w-2 h-2 rounded-full bg-gray-300"></div>
+        <p id="ws-status" class="text-xs text-muted">WebSocket: connexion...</p>
+    </div>
 </div>
 @endsection
+
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+{{-- Load Pusher and Echo SYNCHRONOUSLY before any script runs --}}
 <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+
 <script>
     AuthManager.requireAuth();
-    let activeConvId=null, echoInstance=null;
-    const currentUser=AuthManager.getUser();
 
-    document.addEventListener('DOMContentLoaded', async () => { setupEcho(); await loadConversations(); });
+    let activeConvId  = null;
+    const currentUser = AuthManager.getUser();
 
-    function setupEcho() {
-        echoInstance=new Echo({broadcaster:'reverb',key:'my-app-key',wsHost:'localhost',wsPort:8080,forceTLS:false,enabledTransports:['ws'],authEndpoint:'/broadcasting/auth',auth:{headers:{Authorization:'Bearer '+AuthManager.getToken()}}});
-    }
+    // ── Init Echo immediately after scripts load ─────────────────────
+    function initEcho() {
+        const token = AuthManager.getToken();
+        if (!token) return;
 
-    async function loadConversations() {
-        const data=await Messaging.getConversations();
-        const list=document.getElementById('conv-list');list.innerHTML='';
-        if(!data.conversations.length){list.innerHTML='<p class="text-sm text-muted text-center py-8">Aucune conversation</p>';return;}
-        data.conversations.forEach(conv=>{
-            const other=currentUser.role==='owner'?conv.tenant:conv.owner;
-            const div=document.createElement('div');
-            div.className='flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-primary-50 transition';
-            div.dataset.convId=conv.id;div.onclick=()=>openConversation(conv.id);
-            div.innerHTML=`
-                <img src="${Helpers.avatarUrl(other?.avatar,other?.nom)}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-gray-100">
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center">
-                        <p class="text-sm font-semibold text-dark truncate">${other?.nom||'Inconnu'}</p>
-                        ${conv.unread_count>0?`<span class="bg-primary-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 font-bold">${conv.unread_count}</span>`:''}
-                    </div>
-                    <p class="text-xs text-muted truncate">${conv.property?.titre||''}</p>
-                    <p class="text-xs text-muted truncate mt-0.5">${conv.latest_message?.contenu||''}</p>
-                </div>`;
-            list.appendChild(div);
+        window.echoInstance = new Echo({
+            broadcaster:        'reverb',
+            key:                '{{ env("REVERB_APP_KEY", "darrent-key") }}',
+            wsHost:             '{{ env("REVERB_HOST", "localhost") }}',
+            wsPort:              {{ env("REVERB_PORT", 8080) }},
+            wssPort:             {{ env("REVERB_PORT", 8080) }},
+            forceTLS:           false,
+            disableStats:       true,
+            enabledTransports:  ['ws'],
+            authEndpoint:       '/api/broadcasting/auth',
+            auth: {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept':        'application/json',
+                    'X-CSRF-TOKEN':  document.querySelector('meta[name="csrf-token"]')?.content || '',
+                }
+            },
+        });
+
+        // Connection status
+        window.echoInstance.connector.pusher.connection.bind('connected', () => {
+            document.getElementById('ws-dot').className    = 'w-2 h-2 rounded-full bg-green-500';
+            document.getElementById('ws-status').textContent = 'WebSocket: connecté ✓';
+            console.log(' Reverb connected');
+        });
+
+        window.echoInstance.connector.pusher.connection.bind('disconnected', () => {
+            document.getElementById('ws-dot').className    = 'w-2 h-2 rounded-full bg-red-500';
+            document.getElementById('ws-status').textContent = 'WebSocket: déconnecté';
+            console.log(' Reverb disconnected');
+        });
+
+        window.echoInstance.connector.pusher.connection.bind('failed', () => {
+            document.getElementById('ws-dot').className    = 'w-2 h-2 rounded-full bg-red-500';
+            document.getElementById('ws-status').textContent = 'WebSocket: échec de connexion';
+            console.log(' Reverb connection failed');
+        });
+
+        window.echoInstance.connector.pusher.connection.bind('error', (err) => {
+            console.error('Reverb error:', err);
         });
     }
 
-    async function openConversation(convId) {
-        activeConvId=convId;
-        document.querySelectorAll('[data-conv-id]').forEach(el=>el.classList.toggle('bg-primary-50',el.dataset.convId==convId));
-        const data=await Messaging.getConversation(convId);
-        const conv=data.conversation;const other=currentUser.role==='owner'?conv.tenant:conv.owner;
-        document.getElementById('chat-header').innerHTML=`
-            <img src="${Helpers.avatarUrl(other?.avatar,other?.nom)}" class="w-9 h-9 rounded-full object-cover border-2 border-primary-100">
-            <div>
-                <p class="font-bold text-sm text-dark">${other?.nom||''}</p>
-                <p class="text-xs text-muted">${conv.property?.titre||''}</p>
-            </div>`;
-        const area=document.getElementById('messages-area');area.innerHTML='';
-        data.messages.forEach(msg=>appendMessage(msg));area.scrollTop=area.scrollHeight;
-        document.getElementById('chat-input').classList.remove('hidden');
-        if(echoInstance){
-            echoInstance.leave(`conversation.${activeConvId}`);
-            echoInstance.private(`conversation.${convId}`).listen('MessageSent',(event)=>{if(activeConvId===convId)appendMessage(event.message);loadConversations();});
+    // ── On page load ──────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        initEcho();
+        await loadConversations();
+    });
+
+    // ── Load conversations list ───────────────────────────────────────
+    async function loadConversations() {
+        try {
+            const data = await Messaging.getConversations();
+            const list = document.getElementById('conv-list');
+            list.innerHTML = '';
+
+            if (!data.conversations.length) {
+                list.innerHTML = '<p class="text-sm text-muted text-center py-8">Aucune conversation</p>';
+                return;
+            }
+
+            data.conversations.forEach(conv => {
+                const other = currentUser.role === 'owner' ? conv.tenant : conv.owner;
+                const div   = document.createElement('div');
+                div.className        = 'flex gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-primary-50 transition';
+                div.dataset.convId   = conv.id;
+                div.onclick          = () => openConversation(conv.id);
+                div.innerHTML = `
+                    <img src="${Helpers.avatarUrl(other?.avatar, other?.nom)}"
+                         class="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-gray-100">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center">
+                            <p class="text-sm font-semibold text-dark truncate">${other?.nom || 'Inconnu'}</p>
+                            ${conv.unread_count > 0
+                                ? `<span class="bg-primary-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 font-bold">${conv.unread_count}</span>`
+                                : ''}
+                        </div>
+                        <p class="text-xs text-muted truncate">${conv.property?.titre || ''}</p>
+                        <p class="text-xs text-muted truncate mt-0.5">${conv.latest_message?.contenu || ''}</p>
+                    </div>`;
+                list.appendChild(div);
+            });
+        } catch (e) {
+            console.error('loadConversations error:', e);
         }
     }
 
-    function appendMessage(msg) {
-        const area=document.getElementById('messages-area');
-        const isMe=msg.sender_id===currentUser.id||msg.sender?.id===currentUser.id;
-        const div=document.createElement('div');
-        div.className=`flex ${isMe?'justify-end':'justify-start'} items-end gap-2`;
-        div.innerHTML=`
-            ${!isMe?`<img src="${Helpers.avatarUrl(msg.sender?.avatar,msg.sender?.nom)}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-100">`:'' }
-            <div class="max-w-xs lg:max-w-md">
-                <div class="px-4 py-2.5 rounded-2xl text-sm ${isMe?'bg-primary-500 text-white rounded-br-sm':'bg-white border border-gray-100 text-dark rounded-bl-sm shadow-sm'}">
-                    ${msg.contenu}
-                </div>
-                <p class="text-xs text-muted mt-1 ${isMe?'text-right':'text-left'}">${Helpers.timeAgo(msg.date_envoie||msg.created_at)}</p>
-            </div>`;
-        area.appendChild(div);area.scrollTop=area.scrollHeight;
+    // ── Open a conversation ───────────────────────────────────────────
+    async function openConversation(convId) {
+        activeConvId = convId;
+
+        // Highlight selected
+        document.querySelectorAll('[data-conv-id]').forEach(el =>
+            el.classList.toggle('bg-primary-50', el.dataset.convId == convId));
+
+        try {
+            const data  = await Messaging.getConversation(convId);
+            const conv  = data.conversation;
+            const other = currentUser.role === 'owner' ? conv.tenant : conv.owner;
+
+            // Header
+            document.getElementById('chat-header').innerHTML = `
+                <img src="${Helpers.avatarUrl(other?.avatar, other?.nom)}"
+                     class="w-9 h-9 rounded-full object-cover border-2 border-primary-100">
+                <div>
+                    <p class="font-bold text-sm text-dark">${other?.nom || ''}</p>
+                    <p class="text-xs text-muted">${conv.property?.titre || ''}</p>
+                </div>`;
+
+            // Messages
+            const area = document.getElementById('messages-area');
+            area.innerHTML = '';
+            data.messages.forEach(msg => appendMessage(msg));
+            area.scrollTop = area.scrollHeight;
+
+            // Input
+            document.getElementById('chat-input').classList.remove('hidden');
+            document.getElementById('msg-input').focus();
+
+            // ── Subscribe to WebSocket channel ──────────────────────
+            subscribeToConversation(convId);
+
+        } catch (e) {
+            console.error('openConversation error:', e);
+            Toast.error('Impossible de charger la conversation.');
+        }
     }
 
+    // ── Subscribe to a private channel ───────────────────────────────
+    function subscribeToConversation(convId) {
+        if (!window.echoInstance) {
+            console.warn('Echo not initialized');
+            return;
+        }
+
+        // Leave all previous channels first
+        window.echoInstance.leave(`conversation.${convId}`);
+
+        console.log(`Subscribing to conversation.${convId}`);
+
+        window.echoInstance
+            .private(`conversation.${convId}`)
+            .listen('.MessageSent', (event) => {
+                // Only show if we are still on this conversation
+                if (activeConvId == convId) {
+                    console.log('📨 New message received via WS:', event);
+                    appendMessage(event.message);
+                }
+                // Refresh conversation list (unread count)
+                loadConversations();
+            })
+            .subscribed(() => {
+                console.log(`✅ Subscribed to conversation.${convId}`);
+            })
+            .error((error) => {
+                console.error(`❌ Channel error on conversation.${convId}:`, error);
+            });
+    }
+
+    // ── Append a message bubble ───────────────────────────────────────
+    function appendMessage(msg) {
+        const area = document.getElementById('messages-area');
+        const isMe = msg.sender_id === currentUser.id || msg.sender?.id === currentUser.id;
+        const div  = document.createElement('div');
+        div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`;
+        div.innerHTML = `
+            ${!isMe
+                ? `<img src="${Helpers.avatarUrl(msg.sender?.avatar, msg.sender?.nom)}"
+                        class="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-100">`
+                : ''}
+            <div class="max-w-xs lg:max-w-md">
+                <div class="px-4 py-2.5 rounded-2xl text-sm
+                    ${isMe
+                        ? 'bg-primary-500 text-white rounded-br-sm'
+                        : 'bg-white border border-gray-100 text-dark rounded-bl-sm shadow-sm'}">
+                    ${msg.contenu}
+                </div>
+                <p class="text-xs text-muted mt-1 ${isMe ? 'text-right' : 'text-left'}">
+                    ${Helpers.timeAgo(msg.date_envoie || msg.created_at)}
+                </p>
+            </div>`;
+        area.appendChild(div);
+        area.scrollTop = area.scrollHeight;
+    }
+
+    // ── Send a message ────────────────────────────────────────────────
     async function sendMsg() {
-        const input=document.getElementById('msg-input');const content=input.value.trim();
-        if(!content||!activeConvId)return;input.value='';
-        try{const data=await Messaging.sendMessage({conversation_id:activeConvId,contenu:content});appendMessage(data.data);}catch(e){Toast.error(e.message);input.value=content;}
+        const input   = document.getElementById('msg-input');
+        const content = input.value.trim();
+        if (!content || !activeConvId) return;
+        input.value = '';
+
+        try {
+            const data = await Messaging.sendMessage({
+                conversation_id: activeConvId,
+                contenu:         content,
+            });
+            // Show my own message immediately (sender sees it via HTTP response)
+            appendMessage(data.data);
+        } catch (e) {
+            Toast.error(e.message);
+            input.value = content;
+        }
     }
 </script>
 @endpush

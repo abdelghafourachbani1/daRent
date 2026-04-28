@@ -16,6 +16,28 @@
         </a>
     </div>
 
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="prop-stat-total" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Biens</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="prop-stat-available" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Disponibles</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="prop-stat-rented" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Loués</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="prop-stat-studio" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Studios</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-card">
+            <p id="prop-stat-riad" class="text-3xl font-bold text-dark">—</p>
+            <p class="text-muted text-sm mt-1">Riads</p>
+        </div>
+    </div>
     <div class="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
         <button onclick="filterStatus('')"          class="tab-pill active" data-s="">Tous</button>
         <button onclick="filterStatus('available')" class="tab-pill" data-s="available">Disponibles</button>
@@ -43,11 +65,19 @@
     document.addEventListener('DOMContentLoaded', async () => {
         if(!AuthManager.isOwner()){window.location.href='/';return;}
         const data=await Properties.myList();allProperties=data.data||[];
+        renderStats(allProperties);
         renderProperties(allProperties);
     });
     function filterStatus(status){
         document.querySelectorAll('.tab-pill').forEach(b=>b.classList.toggle('active',b.dataset.s===status));
         renderProperties(status?allProperties.filter(p=>p.status===status):allProperties);
+    }
+    function renderStats(props){
+        document.getElementById('prop-stat-total').textContent     = props.length;
+        document.getElementById('prop-stat-available').textContent = props.filter(p=>p.status==='available').length;
+        document.getElementById('prop-stat-rented').textContent    = props.filter(p=>p.status==='rented').length;
+        document.getElementById('prop-stat-studio').textContent    = props.filter(p=>p.type==='studio').length;
+        document.getElementById('prop-stat-riad').textContent      = props.filter(p=>p.type==='riad').length;
     }
     function renderProperties(props){
         const grid=document.getElementById('my-grid');const empty=document.getElementById('my-empty');
@@ -82,7 +112,13 @@
     }
     async function deleteProperty(id,btn){
         if(!confirm('Supprimer ce bien ?'))return;btn.disabled=true;
-        try{await Properties.delete(id);Toast.success('Bien supprimé');allProperties=allProperties.filter(p=>p.id!==id);renderProperties(allProperties);}catch(e){Toast.error(e.message);btn.disabled=false;}
+        try{
+            await Properties.delete(id);
+            Toast.success('Bien supprimé');
+            allProperties = allProperties.filter(p=>p.id!==id);
+            renderStats(allProperties);
+            renderProperties(allProperties);
+        }catch(e){Toast.error(e.message);btn.disabled=false;}
     }
 </script>
 @endpush

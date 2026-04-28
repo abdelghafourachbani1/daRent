@@ -131,7 +131,7 @@ class MessagingController extends Controller
  
         $message->load('sender:id,nom,avatar');
 
-        broadcast(new MessageSent($message))->toOthers();
+        broadcast(new MessageSent($message));
  
         return response()->json([
             'message' => 'Message envoyé',

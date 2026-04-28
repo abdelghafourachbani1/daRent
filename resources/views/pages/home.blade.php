@@ -11,7 +11,7 @@
     <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20">
         <div class="max-w-3xl">
             <span class="inline-block bg-primary-500/20 text-primary-300 text-sm font-semibold px-4 py-1.5 rounded-full mb-6 border border-primary-500/30">
-                🏡 Plateforme N°1 au Maroc
+                Plateforme N°1 au Maroc
             </span>
             <h1 class="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-6">
                 Trouvez votre<br>

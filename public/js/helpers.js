@@ -21,6 +21,8 @@ const Helpers = {
     imageUrl(path) {
         if (!path) return '/images/default-property.svg';
         if (path.startsWith('http')) return path;
+        if (path.startsWith('/storage/')) return path;
+        if (path.startsWith('storage/')) return `/${path}`;
         return `/storage/${path}`;
     },
 

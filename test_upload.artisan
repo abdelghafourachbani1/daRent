@@ -1,0 +1,11 @@
+$user = App\Models\User::find(16);
+echo "User: " . $user->nom . "\n";
+echo "Current avatar: " . ($user->avatar ?? 'NULL') . "\n";
+
+// Check avatar field
+$result = $user->updateProfile(['avatar' => 'test/path.jpg']);
+echo "Update result: " . ($result ? 'true' : 'false') . "\n";
+
+// Check database
+$fresh = $user->fresh();
+echo "Avatar after update: " . ($fresh->avatar ?? 'NULL') . "\n";

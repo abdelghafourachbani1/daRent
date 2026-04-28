@@ -53,6 +53,7 @@
                     <button onclick="toggleUserMenu()"
                         class="flex items-center gap-2.5 bg-navy-light border border-gray-600 rounded-xl px-3 py-2 hover:border-primary-500 transition">
                         <img id="nav-avatar" src="/images/default-avatar.svg"
+                             onerror="this.src='/images/default-avatar.svg'"
                              class="w-7 h-7 rounded-full object-cover" alt="avatar">
                         <div class="hidden sm:block text-left">
                             <p id="nav-username" class="text-white text-xs font-semibold leading-none"></p>
@@ -153,8 +154,8 @@
             </div>
         </div>
         <div class="border-t border-gray-700 pt-6 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <p class="text-xs text-gray-500">© 2024 DAR-RENT. Tous droits réservés.</p>
-            <p class="text-xs text-gray-500">Fait avec ❤️ au Maroc</p>
+            <p class="text-xs text-gray-500">© 2026 DAR-RENT. Tous droits réservés.</p>
+            <p class="text-xs text-gray-500">Fait  au Maroc</p>
         </div>
     </div>
 </footer>

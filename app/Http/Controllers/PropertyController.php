@@ -160,17 +160,17 @@ class PropertyController extends Controller {
         }
 
         $request->validate([
-            'images' => 'required|array|max:10',
-            'images.*' => 'required|url',
+            'images' => 'required|array|max:5',
+            'images.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         $uploaded = [];
 
-        foreach ($request->images as $imageUrl) {
-
+        foreach ($request->file('images') as $file) {
+            $path = $file->store('properties', 'public');
             $media = Media::create([
                 'property_id' => $property->id,
-                'url_fichier' => $imageUrl, 
+                'url_fichier' => $path, 
                 'type_fichier' => 'image',
             ]);
 

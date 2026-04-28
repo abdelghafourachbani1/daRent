@@ -15,7 +15,7 @@ class ReservationController extends Controller
     public function index(Request $request): JsonResponse {
         $user  = $request->user();
         $query = Reservation::with([
-            'property:id,titre,adress,prix_mensuel',
+            'property:id,titre,adress,prix_mensuel,type',
             'tenant:id,nom',
             'owner:id,nom',
         ]);

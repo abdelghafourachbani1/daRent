@@ -9,6 +9,7 @@
     <div class="flex items-center gap-6 mb-8 p-6 bg-white rounded-2xl shadow-card">
         <div class="relative">
             <img id="profile-avatar" src="/images/default-avatar.svg"
+                 onerror="this.src='/images/default-avatar.svg'"
                  class="w-20 h-20 rounded-full object-cover border-4 border-primary-100">
             <label for="avatar-input"
                 class="absolute bottom-0 right-0 bg-primary-500 text-white rounded-full w-7 h-7
@@ -124,10 +125,12 @@
     async function uploadAvatar(input) {
         const fd = new FormData(); fd.append('avatar', input.files[0]);
         try {
-            const data = await Auth.update(fd);
+            const data = await Auth.update(fd, true);
             AuthManager.save(AuthManager.getToken(), data.user);
-            // Update the displayed avatar
+            // Update the displayed avatar in profile and nav
             document.getElementById('profile-avatar').src = Helpers.avatarUrl(data.user.avatar, data.user.nom);
+            const navAvatar = document.getElementById('nav-avatar');
+            if (navAvatar) navAvatar.src = Helpers.avatarUrl(data.user.avatar, data.user.nom);
             Toast.success('Photo mise à jour !');
         } catch (e) { Toast.error(e.message); }
     }
