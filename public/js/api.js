@@ -5,6 +5,9 @@ async function request(method, endpoint, data = null, isFormData = false) {
     const token = localStorage.getItem('darent_token');
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (window.echoInstance?.socketId?.()) {
+        headers['X-Socket-ID'] = window.echoInstance.socketId();
+    }
     if (!isFormData) {
         headers['Content-Type'] = 'application/json';
         headers['Accept'] = 'application/json';

@@ -55,30 +55,54 @@
 @endsection
 
 @push('scripts')
-{{-- Load Pusher and Echo SYNCHRONOUSLY before any script runs --}}
-<script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
-
 <script>
     AuthManager.requireAuth();
 
     let activeConvId  = null;
-    const currentUser = AuthManager.getUser();
+    let activeChannel = null;
+    let currentUser = AuthManager.getUser();
+    const reverbConfig = {
+        key:    @json(env('REVERB_APP_KEY', 'darrent-key')),
+        host:   @json(env('VITE_REVERB_HOST', env('REVERB_HOST', 'localhost'))),
+        port:   {{ (int) env('VITE_REVERB_PORT', env('REVERB_PORT', 8080)) }},
+        scheme: @json(env('VITE_REVERB_SCHEME', env('REVERB_SCHEME', 'http'))),
+    };
+
+    function resolveWsHost(configuredHost) {
+        if (!configuredHost || ['0.0.0.0', '::'].includes(configuredHost)) {
+            return window.location.hostname;
+        }
+
+        return configuredHost;
+    }
 
     // ── Init Echo immediately after scripts load ─────────────────────
     function initEcho() {
         const token = AuthManager.getToken();
         if (!token) return;
+        if (!window.Echo || !window.Pusher) {
+            document.getElementById('ws-dot').className = 'w-2 h-2 rounded-full bg-yellow-500';
+            document.getElementById('ws-status').textContent = 'WebSocket: indisponible';
+            console.warn('Echo/Pusher unavailable; conversations will still load without realtime.');
+            return;
+        }
+
+        if (window.echoInstance) {
+            window.echoInstance.disconnect();
+        }
+
+        const wsHost = resolveWsHost(reverbConfig.host);
+        const isSecure = reverbConfig.scheme === 'https';
 
         window.echoInstance = new Echo({
             broadcaster:        'reverb',
-            key:                '{{ env("REVERB_APP_KEY", "darrent-key") }}',
-            wsHost:             '{{ env("REVERB_HOST", "localhost") }}',
-            wsPort:              {{ env("REVERB_PORT", 8080) }},
-            wssPort:             {{ env("REVERB_PORT", 8080) }},
-            forceTLS:           false,
+            key:                reverbConfig.key,
+            wsHost:             wsHost,
+            wsPort:             reverbConfig.port,
+            wssPort:            reverbConfig.port,
+            forceTLS:           isSecure,
             disableStats:       true,
-            enabledTransports:  ['ws'],
+            enabledTransports:  isSecure ? ['wss', 'ws'] : ['ws'],
             authEndpoint:       '/api/broadcasting/auth',
             auth: {
                 headers: {
@@ -111,13 +135,46 @@
         window.echoInstance.connector.pusher.connection.bind('error', (err) => {
             console.error('Reverb error:', err);
         });
+
+        subscribeToUserMessages();
+    }
+
+    function handleRealtimeMessage(event) {
+        if (activeConvId == event.message?.conversation_id) {
+            appendMessage(event.message);
+        }
+
+        loadConversations();
+    }
+
+    function subscribeToUserMessages() {
+        if (!window.echoInstance || !currentUser?.id) return;
+
+        window.echoInstance
+            .private(`App.Models.User.${currentUser.id}`)
+            .listen('.MessageSent', handleRealtimeMessage);
     }
 
     // ── On page load ──────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
-        initEcho();
+        await hydrateCurrentUser();
         await loadConversations();
+        initEcho();
     });
+
+    async function hydrateCurrentUser() {
+        try {
+            const data = await Auth.me();
+            currentUser = data.user || data;
+            if (currentUser) {
+                AuthManager.save(AuthManager.getToken(), currentUser);
+            }
+        } catch (e) {
+            console.error('hydrateCurrentUser error:', e);
+            AuthManager.clear();
+            window.location.href = '/login';
+        }
+    }
 
     // ── Load conversations list ───────────────────────────────────────
     async function loadConversations() {
@@ -154,6 +211,8 @@
             });
         } catch (e) {
             console.error('loadConversations error:', e);
+            document.getElementById('conv-list').innerHTML =
+                '<p class="text-sm text-red-500 text-center py-8">Impossible de charger les conversations</p>';
         }
     }
 
@@ -205,22 +264,19 @@
             return;
         }
 
-        // Leave all previous channels first
-        window.echoInstance.leave(`conversation.${convId}`);
+        const channelName = `conversation.${convId}`;
 
-        console.log(`Subscribing to conversation.${convId}`);
+        if (activeChannel && activeChannel !== channelName) {
+            window.echoInstance.leave(activeChannel);
+        }
+
+        activeChannel = channelName;
+
+        console.log(`Subscribing to ${channelName}`);
 
         window.echoInstance
-            .private(`conversation.${convId}`)
-            .listen('.MessageSent', (event) => {
-                // Only show if we are still on this conversation
-                if (activeConvId == convId) {
-                    console.log('📨 New message received via WS:', event);
-                    appendMessage(event.message);
-                }
-                // Refresh conversation list (unread count)
-                loadConversations();
-            })
+            .private(channelName)
+            .listen('.MessageSent', handleRealtimeMessage)
             .subscribed(() => {
                 console.log(`✅ Subscribed to conversation.${convId}`);
             })
@@ -232,9 +288,14 @@
     // ── Append a message bubble ───────────────────────────────────────
     function appendMessage(msg) {
         const area = document.getElementById('messages-area');
-        const isMe = msg.sender_id === currentUser.id || msg.sender?.id === currentUser.id;
+        if (msg.id && area.querySelector(`[data-message-id="${msg.id}"]`)) return;
+
+        const isMe = Number(msg.sender_id) === Number(currentUser.id) || Number(msg.sender?.id) === Number(currentUser.id);
         const div  = document.createElement('div');
         div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} items-end gap-2`;
+        if (msg.id) {
+            div.dataset.messageId = msg.id;
+        }
         div.innerHTML = `
             ${!isMe
                 ? `<img src="${Helpers.avatarUrl(msg.sender?.avatar, msg.sender?.nom)}"

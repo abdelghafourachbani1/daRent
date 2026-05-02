@@ -28,7 +28,7 @@ class MessagingController extends Controller
                 ], 403);
             }
             
-            if ($property->user_id === $request->user()->id) {
+            if ((int) $property->user_id === (int) $request->user()->id) {
                 return response()->json([
                     'message' => 'Vous ne pouvez pas envoyer un message pour votre propre propriété.',
                 ], 422);
@@ -60,10 +60,19 @@ class MessagingController extends Controller
     }
  
     public function getConversations(Request $request): JsonResponse {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
  
-        $conversations = Conversation::where('tenant_id', $userId)
-            ->orWhere('owner_id', $userId)
+        $conversations = Conversation::where(function ($q) use ($user, $userId) {
+                $q->where('tenant_id', $userId)
+                  ->orWhere('owner_id', $userId);
+
+                if ($user->isOwner()) {
+                    $q->orWhereHas('property', function ($propertyQuery) use ($userId) {
+                        $propertyQuery->where('user_id', $userId);
+                    });
+                }
+            })
             ->with([
                 'property:id,titre,adress',
                 'tenant:id,nom,avatar',
@@ -74,7 +83,13 @@ class MessagingController extends Controller
                 $q->where('est_lu', false)
                   ->where('sender_id', '!=', $userId);
             }])
-            ->latest()
+            ->orderByDesc(
+                Message::select('created_at')
+                    ->whereColumn('conversation_id', 'conversations.id')
+                    ->latest()
+                    ->take(1)
+            )
+            ->latest('conversations.created_at')
             ->get();
  
         return response()->json([
@@ -131,7 +146,7 @@ class MessagingController extends Controller
  
         $message->load('sender:id,nom,avatar');
 
-        broadcast(new MessageSent($message));
+        broadcast(new MessageSent($message))->toOthers();
  
         return response()->json([
             'message' => 'Message envoyé',
@@ -165,4 +180,3 @@ class MessagingController extends Controller
     }
 }
  
-

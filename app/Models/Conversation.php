@@ -16,8 +16,12 @@ class Conversation extends Model
     ];
 
     public function isParticipant(int $userId): bool {
-        // to join a channel he shouls be (tenant or owner)
-        return $this->tenant_id === $userId || $this->owner_id === $userId;
+        // Database drivers may hydrate IDs as strings, so compare normalized values.
+        $this->loadMissing('property:id,user_id');
+
+        return (int) $this->tenant_id === $userId
+            || (int) $this->owner_id === $userId
+            || (int) $this->property?->user_id === $userId;
     }
  
     public function tenant() {

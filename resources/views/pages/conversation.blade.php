@@ -35,14 +35,44 @@
 </div>
 @endsection
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.js"></script>
 <script>
     AuthManager.requireAuth();
     const CONV_ID     = {{ $convId }};
-    const currentUser = AuthManager.getUser();
+    let currentUser = AuthManager.getUser();
+    const reverbConfig = {
+        key:    @json(env('REVERB_APP_KEY', 'darrent-key')),
+        host:   @json(env('VITE_REVERB_HOST', env('REVERB_HOST', 'localhost'))),
+        port:   {{ (int) env('VITE_REVERB_PORT', env('REVERB_PORT', 8080)) }},
+        scheme: @json(env('VITE_REVERB_SCHEME', env('REVERB_SCHEME', 'http'))),
+    };
 
-    document.addEventListener('DOMContentLoaded', async () => { await loadConversation(); setupEcho(); });
+    document.addEventListener('DOMContentLoaded', async () => {
+        await hydrateCurrentUser();
+        await loadConversation();
+        setupEcho();
+        subscribeToConversation();
+    });
+
+    async function hydrateCurrentUser() {
+        try {
+            const data = await Auth.me();
+            currentUser = data.user || data;
+            if (currentUser) {
+                AuthManager.save(AuthManager.getToken(), currentUser);
+            }
+        } catch (e) {
+            AuthManager.clear();
+            window.location.href = '/login';
+        }
+    }
+
+    function resolveWsHost(configuredHost) {
+        if (!configuredHost || ['0.0.0.0', '::'].includes(configuredHost)) {
+            return window.location.hostname;
+        }
+
+        return configuredHost;
+    }
 
     async function loadConversation() {
         const data  = await Messaging.getConversation(CONV_ID);
@@ -61,9 +91,14 @@
 
     function appendMessage(msg) {
         const area=document.getElementById('messages-area');
-        const isMe=msg.sender_id===currentUser.id||msg.sender?.id===currentUser.id;
+        if (msg.id && area.querySelector(`[data-message-id="${msg.id}"]`)) return;
+
+        const isMe=Number(msg.sender_id)===Number(currentUser.id)||Number(msg.sender?.id)===Number(currentUser.id);
         const div=document.createElement('div');
         div.className=`flex ${isMe?'justify-end':'justify-start'} items-end gap-2`;
+        if (msg.id) {
+            div.dataset.messageId = msg.id;
+        }
         div.innerHTML=`
             ${!isMe?`<img src="${Helpers.avatarUrl(msg.sender?.avatar,msg.sender?.nom)}" class="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-gray-100">`:'' }
             <div class="max-w-sm">
@@ -82,19 +117,27 @@
     }
 
 function setupEcho() {
+    if (!window.Echo || !window.Pusher) {
+        console.warn('Echo/Pusher unavailable; conversation will still load without realtime.');
+        return;
+    }
+
     // destroy previous instance if exists
     if (window.echoInstance) {
         window.echoInstance.disconnect();
     }
 
+    const wsHost = resolveWsHost(reverbConfig.host);
+    const isSecure = reverbConfig.scheme === 'https';
+
     window.echoInstance = new Echo({
         broadcaster:       'reverb',
-        key:               'darrent-key',       // must match REVERB_APP_KEY in .env
-        wsHost:            'localhost',
-        wsPort:            8080,
-        wssPort:           8080,
-        forceTLS:          false,
-        enabledTransports: ['ws'],
+        key:               reverbConfig.key,
+        wsHost:            wsHost,
+        wsPort:            reverbConfig.port,
+        wssPort:           reverbConfig.port,
+        forceTLS:          isSecure,
+        enabledTransports: isSecure ? ['wss', 'ws'] : ['ws'],
         authEndpoint:      '/api/broadcasting/auth',  // ← important: /api prefix
         auth: {
             headers: {
@@ -103,6 +146,28 @@ function setupEcho() {
             }
         },
     });
+}
+
+function subscribeToConversation() {
+    if (!window.echoInstance) return;
+
+    window.echoInstance.leave(`conversation.${CONV_ID}`);
+
+    window.echoInstance
+        .private(`conversation.${CONV_ID}`)
+        .listen('.MessageSent', (event) => {
+            appendMessage(event.message);
+        });
+
+    if (currentUser?.id) {
+        window.echoInstance
+            .private(`App.Models.User.${currentUser.id}`)
+            .listen('.MessageSent', (event) => {
+                if (Number(event.message?.conversation_id) === Number(CONV_ID)) {
+                    appendMessage(event.message);
+                }
+            });
+    }
 }
 </script>
 @endpush
